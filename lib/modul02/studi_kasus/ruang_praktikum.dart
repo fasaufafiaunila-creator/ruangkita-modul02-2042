@@ -10,6 +10,18 @@ class RuangPraktikumPage extends StatefulWidget {
 }
 
 class _RuangPraktikumPageState extends State<RuangPraktikumPage> {
+  RoomStatus? selectedStatus;
+
+  List<RoomSession> get filteredSessions {
+    if (selectedStatus == null) {
+      return roomSessions;
+    }
+
+    return roomSessions
+        .where((session) => session.status == selectedStatus)
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,7 +33,7 @@ class _RuangPraktikumPageState extends State<RuangPraktikumPage> {
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -40,6 +52,8 @@ class _RuangPraktikumPageState extends State<RuangPraktikumPage> {
               ],
             ),
           ),
+          _buildStatusFilter(),
+          const SizedBox(height: 8),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -62,19 +76,69 @@ class _RuangPraktikumPageState extends State<RuangPraktikumPage> {
     );
   }
 
+  Widget _buildStatusFilter() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ChoiceChip(
+              label: const Text('Semua'),
+              selected: selectedStatus == null,
+              onSelected: (_) {
+                setState(() {
+                  selectedStatus = null;
+                });
+              },
+            ),
+            ...RoomStatus.values.map(
+              (status) {
+                return ChoiceChip(
+                  label: Text(status.label),
+                  selected: selectedStatus == status,
+                  onSelected: (_) {
+                    setState(() {
+                      selectedStatus = status;
+                    });
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCompactLayout() {
+    final sessions = filteredSessions;
+
+    if (sessions.isEmpty) {
+      return _buildEmptyState();
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      itemCount: roomSessions.length,
+      itemCount: sessions.length,
       itemBuilder: (context, index) {
         return RoomSessionCard(
-          session: roomSessions[index],
+          session: sessions[index],
+          onTap: () => _showRoomDetail(sessions[index]),
         );
       },
     );
   }
 
   Widget _buildMediumLayout() {
+    final sessions = filteredSessions;
+
+    if (sessions.isEmpty) {
+      return _buildEmptyState();
+    }
+
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -83,16 +147,23 @@ class _RuangPraktikumPageState extends State<RuangPraktikumPage> {
         mainAxisSpacing: 12,
         childAspectRatio: 1.45,
       ),
-      itemCount: roomSessions.length,
+      itemCount: sessions.length,
       itemBuilder: (context, index) {
         return RoomSessionCard(
-          session: roomSessions[index],
+          session: sessions[index],
+          onTap: () => _showRoomDetail(sessions[index]),
         );
       },
     );
   }
 
   Widget _buildExpandedLayout() {
+    final sessions = filteredSessions;
+
+    if (sessions.isEmpty) {
+      return _buildEmptyState();
+    }
+
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -101,10 +172,73 @@ class _RuangPraktikumPageState extends State<RuangPraktikumPage> {
         mainAxisSpacing: 12,
         childAspectRatio: 1.35,
       ),
-      itemCount: roomSessions.length,
+      itemCount: sessions.length,
       itemBuilder: (context, index) {
         return RoomSessionCard(
-          session: roomSessions[index],
+          session: sessions[index],
+          onTap: () => _showRoomDetail(sessions[index]),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text(
+          'Tidak ada ruang dengan status tersebut.',
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  void _showRoomDetail(RoomSession session) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  session.roomName,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Kegiatan: ${session.activityName}',
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Waktu: ${session.timeRange}',
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Status: ${session.status.label}',
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  session.description,
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Tutup'),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -115,80 +249,86 @@ class RoomSessionCard extends StatelessWidget {
   const RoomSessionCard({
     super.key,
     required this.session,
+    required this.onTap,
   });
 
   final RoomSession session;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.meeting_room_outlined,
-                  size: 40,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        session.roomName,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        session.activityName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        session.timeRange,
-                        style: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        session.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.meeting_room_outlined,
+                    size: 40,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          session.roomName,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          session.activityName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          session.timeRange,
+                          style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          session.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Positioned(
-            top: 12,
-            right: 12,
-            child: _StatusBadge(
-              status: session.status,
+            Positioned(
+              top: 12,
+              right: 12,
+              child: _StatusBadge(
+                status: session.status,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
