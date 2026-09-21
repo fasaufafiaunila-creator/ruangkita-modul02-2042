@@ -41,18 +41,72 @@ class _RuangPraktikumPageState extends State<RuangPraktikumPage> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              itemCount: roomSessions.length,
-              itemBuilder: (context, index) {
-                return RoomSessionCard(
-                  session: roomSessions[index],
-                );
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+
+                if (width < 600) {
+                  return _buildCompactLayout();
+                }
+
+                if (width < 840) {
+                  return _buildMediumLayout();
+                }
+
+                return _buildExpandedLayout();
               },
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCompactLayout() {
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      itemCount: roomSessions.length,
+      itemBuilder: (context, index) {
+        return RoomSessionCard(
+          session: roomSessions[index],
+        );
+      },
+    );
+  }
+
+  Widget _buildMediumLayout() {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.45,
+      ),
+      itemCount: roomSessions.length,
+      itemBuilder: (context, index) {
+        return RoomSessionCard(
+          session: roomSessions[index],
+        );
+      },
+    );
+  }
+
+  Widget _buildExpandedLayout() {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.35,
+      ),
+      itemCount: roomSessions.length,
+      itemBuilder: (context, index) {
+        return RoomSessionCard(
+          session: roomSessions[index],
+        );
+      },
     );
   }
 }
