@@ -3,7 +3,14 @@ import 'package:flutter/material.dart';
 import '../../models/room_session.dart';
 
 class RuangPraktikumPage extends StatefulWidget {
-  const RuangPraktikumPage({super.key});
+  const RuangPraktikumPage({
+    super.key,
+    required this.onToggleTheme,
+    required this.isDarkMode,
+  });
+
+  final VoidCallback onToggleTheme;
+  final bool isDarkMode;
 
   @override
   State<RuangPraktikumPage> createState() => _RuangPraktikumPageState();
@@ -28,6 +35,19 @@ class _RuangPraktikumPageState extends State<RuangPraktikumPage> {
       appBar: AppBar(
         title: const Text('RuangKita'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: widget.isDarkMode
+                ? 'Aktifkan Light Mode'
+                : 'Aktifkan Dark Mode',
+            onPressed: widget.onToggleTheme,
+            icon: Icon(
+              widget.isDarkMode
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
